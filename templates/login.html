@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+<meta charset="utf-8">
+
+{% block my_body %}
+    <h2>登录查询系统</h2>
+    {% if error %}
+        <p class=error><strong>出现错误:</strong> {{ error }}
+    {% endif %}
+
+    <form action="{{ url_for('login') }}" method=post>
+        <dl>
+            <dt>您的佣金账号:
+            <dd><input type=text name=account>
+            <dt>只读密码:
+            <dd><input type=password name=password>
+            <dd><input type=submit value=登录>
+        </dl>
+    </form>
+{% endblock %}

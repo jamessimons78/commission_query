@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hans">
+    <head>
+        <meta charset="utf-8">
+        <title>瑞投科技——查询系统</title>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+
+    <body>
+        <div class=page>
+            <img src="static/logo.png">
+
+            {% for message in get_flashed_messages() %}
+                <div class=flash>{{ message }}</div>
+            {% endfor %}
+
+            {% block my_body %}{% endblock %}
+
+            <div class=metanav>
+                {% if session.logged_in %}
+                    <a href="{{ url_for('logout') }}">退出</a>
+                {% endif %}
+            </div>
+
+            <div class="link">
+                <a href="https://apply.swissquote.com/fx/?lang=cn&partnerid=7e709c47-1a3f-4c9a-a136-2417caa78c92&formName=MT4LIVEINDIV"
+                   title="https://www.swissquote.com">瑞讯银行官网开户</a>
+            </div>
+        </div>
+    </body>
+</html>
