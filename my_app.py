@@ -50,10 +50,10 @@ def show_base_information():
         abort(401)
     account = session['account']
     get_db()
-    cur = g.db.execute("select name from user where commission_account==?", [account])
-    row = cur.fetchone()
-    username = row[0]
-    return render_template('base_information.html', username=username)
+    cur = g.db.execute("select name from user where referrer_account==?", [account])
+    rows = cur.fetchall()
+    clients = [row[0] for row in rows]
+    return render_template('base_information.html', clients=clients)
 
 @app.route('/logout')
 def logout():

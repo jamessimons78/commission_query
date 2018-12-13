@@ -2,6 +2,14 @@
 <meta charset="utf-8">
 
 {% block my_body %}
-    <h2>您经纪业务的基本信息</h2>
-    <h3>姓名：{{ username }}</h3>
+    <h4>您名下的客户：</h4>
+
+    <ul class=clients>
+        {% for client in clients %}
+            <li><h5>{{ client }}</h5>
+        {% else %}
+            <li><em>您还没有客户！</em>
+        {% endfor %}
+    </ul>
+
 {% endblock %}

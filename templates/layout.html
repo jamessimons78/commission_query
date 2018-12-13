@@ -14,13 +14,13 @@
                 <div class=flash>{{ message }}</div>
             {% endfor %}
 
-            {% block my_body %}{% endblock %}
-
             <div class=metanav>
                 {% if session.logged_in %}
                     <a href="{{ url_for('logout') }}">退出</a>
                 {% endif %}
             </div>
+
+            {% block my_body %}{% endblock %}
 
             <div class="link">
                 <a href="https://apply.swissquote.com/fx/?lang=cn&partnerid=7e709c47-1a3f-4c9a-a136-2417caa78c92&formName=MT4LIVEINDIV"
