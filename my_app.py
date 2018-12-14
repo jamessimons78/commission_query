@@ -200,7 +200,7 @@ def add_ib_submit():
                      'values (?, ?, ?, ?, ?, ?, ? ,?)', [ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer])
         g.db.commit()
 
-        flash('你已经成功添加了一个新经纪人的资料')
+        flash('已添加 ' + ib_name + ' 的资料')
         return redirect(url_for('add_ib'))
     else:
         # 当输入有误时，将原有输入内容传入新的输入页面
@@ -214,21 +214,150 @@ def add_ib_submit():
         return render_template('add_ib.html', error=error, ib_info=ib_info)
 
 
-@app.route('/entering_vol', methods=['GET','POST'])
+@app.route('/entering_vol')
 def entering_vol():
     '''
     后台管理：输入上周交易量
     '''
-    pass
+    if not session.get('logged_in'):
+        abort(401)
+
+    # 初始化输入控件
+    vol = {}
+    vol['investment_account'] = ''
+    vol['trading_vol'] = ''
+
+    return render_template('entering_vol.html', vol=vol)
 
 
-@app.route('/entering_dividend', methods=['GET','POST'])
+@app.route('/entering_vol_submit', methods=['GET','POST'])
+def entering_vol_submit():
+    investment_account = request.form['investment_account']
+    trading_vol = request.form['trading_vol']
+
+    rule = True
+    if len(investment_account) == 0 or len(trading_vol) == 0:
+        rule = False
+        error = '不能提交空的数据！'
+    else:
+        account_reg = r'^[1-9]\d+$'
+        if not re.match(account_reg, investment_account):
+            rule = False
+            error = '您输入的投资账号不符合MT4账号的规则，请核实后再录入！'
+        
+        if rule:
+            vol_reg = r'^[0-9]{0,3}[.][0-9]{2}$'
+            if not re.match(vol_reg, trading_vol):
+                rule = False
+                error = '您输入的交易量不符合规则，请核实后再录入！'
+
+        if rule:
+            get_db()
+            cur = g.db.execute("select investment_account from user where investment_account==?", [investment_account])
+            row = cur.fetchone()
+            if not row:
+                rule = False
+                error = '系统里没有您输入的MT4投资账号，请核实后再录入！'
+
+        if rule:
+            dt = datetime.now()
+            input_date = dt.strftime("%Y-%m-%d")
+            get_db()
+            cur = g.db.execute("select investment_account from trading_vol where investment_account==? and input_date==?", [investment_account, input_date])
+            row = cur.fetchone()
+            if row:
+                rule = False
+                error = '该账号今天已经录入过交易量了，请核实后再录入！'
+
+    if rule:
+        inputer = session.get('account')
+        # get_db()
+        g.db.execute('insert into trading_vol (investment_account, trading_vol, input_date, inputer) '
+                     'values (?, ?, ?, ?)', [investment_account, trading_vol, input_date, inputer])
+        g.db.commit()
+
+        flash('已添加账号 ' + investment_account + ' 的交易量')
+        return redirect(url_for('entering_vol'))
+    else:
+        # 当输入有误时，将原有输入内容传入新的输入页面
+        vol = {}
+        vol['investment_account'] = investment_account
+        vol['trading_vol'] = trading_vol
+        return render_template('entering_vol.html', error=error, vol=vol)
+    
+
+
+@app.route('/entering_dividend')
 def entering_dividend():
     '''
     后台管理：输入上月盈利分红
     '''
-    pass
+    if not session.get('logged_in'):
+        abort(401)
 
+    # 初始化输入控件
+    dividend_dict = {}
+    dividend_dict['investment_account'] = ''
+    dividend_dict['dividend'] = ''
+
+    return render_template('entering_dividend.html', dividend_dict=dividend_dict)
+
+
+@app.route('/entering_dividend_submit', methods=['GET','POST'])
+def entering_dividend_submit():
+    investment_account = request.form['investment_account']
+    dividend = request.form['dividend']
+
+    rule = True
+    if len(investment_account) == 0 or len(dividend) == 0:
+        rule = False
+        error = '不能提交空的数据！'
+    else:
+        account_reg = r'^[1-9]\d+$'
+        if not re.match(account_reg, investment_account):
+            rule = False
+            error = '您输入的投资账号不符合MT4账号的规则，请核实后再录入！'
+        
+        if rule:
+            dividend_reg = r'^[0-9]{0,5}[.][0-9]{2}$'
+            if not re.match(dividend_reg, dividend):
+                rule = False
+                error = '您输入的分红不符合规则，请核实后再录入！'
+
+        if rule:
+            get_db()
+            cur = g.db.execute("select investment_account from user where investment_account==?", [investment_account])
+            row = cur.fetchone()
+            if not row:
+                rule = False
+                error = '系统里没有您输入的MT4投资账号，请核实后再录入！'
+
+        if rule:
+            dt = datetime.now()
+            input_date = dt.strftime("%Y-%m-%d")
+            get_db()
+            cur = g.db.execute("select investment_account from dividend where investment_account==? and input_date==?", [investment_account, input_date])
+            row = cur.fetchone()
+            if row:
+                rule = False
+                error = '该账号今天已经录入过分红了，请核实后再录入！'
+
+    if rule:
+        inputer = session.get('account')
+        # get_db()
+        g.db.execute('insert into dividend (investment_account, dividend, input_date, inputer) '
+                     'values (?, ?, ?, ?)', [investment_account, dividend, input_date, inputer])
+        g.db.commit()
+
+        flash('已添加账号 ' + investment_account + ' 的分红')
+        return redirect(url_for('entering_dividend'))
+    else:
+        # 当输入有误时，将原有输入内容传入新的输入页面
+        dividend_dict = {}
+        dividend_dict['investment_account'] = investment_account
+        dividend_dict['dividend'] = dividend
+        return render_template('entering_dividend.html', error=error, dividend_dict=dividend_dict)
+    
 
 @app.route('/logout')
 def logout():

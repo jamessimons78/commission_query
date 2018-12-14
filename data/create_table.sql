@@ -12,6 +12,11 @@
   CREATE TABLE IF NOT EXISTS [trading_vol](
   [investment_account] CHAR(8) NOT NULL, 
   [trading_vol] DECIMAL(6, 2) NOT NULL, 
-  [trading_week] INTEGER NOT NULL, 
+  [input_date] TEXT(10) NOT NULL, 
+  [inputer] CHAR(8) NOT NULL);
+  
+  CREATE TABLE IF NOT EXISTS [dividend](
+  [investment_account] CHAR(8) NOT NULL, 
+  [dividend] DECIMAL(6, 2) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(8) NOT NULL);
