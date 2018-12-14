@@ -10,6 +10,8 @@
         {% else %}
             <li><em>您还没有客户！</em>
         {% endfor %}
+
+		<a href="{{ url_for('commission_query') }}">详细返佣情况</a>
     </ul>
 
 {% endblock %}

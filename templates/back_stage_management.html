@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+<meta charset="utf-8">
+
+{% block my_body %}
+    <h4>经纪人后台管理系统</h4>
+
+	<ul class=back_stage>
+		<li><a href="{{ url_for('add_ib') }}">添加新经纪人</a></li>
+		<li><a href="{{ url_for('entering_vol') }}">录入上周交易量</a></li>
+		<li><a href="{{ url_for('entering_dividend') }}">录入上月盈利分红</a></li>
+    </ul>
+
+{% endblock %}
