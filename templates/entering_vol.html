@@ -7,13 +7,14 @@
         <p class=error><strong>出现错误:</strong> {{ error }}
     {% endif %}
 
-    <form action="{{ url_for('entering_vol_submit') }}" method=post>
+    <form class=my_form action="{{ url_for('entering_vol_submit') }}" method=post>
         <dl>
             <dt>MT4投资账号:
-            <dd>*<input type=text name=investment_account value={{ vol['investment_account'] }}>
+            <dd>*<input type=text name=investment_account value={{ vol_dict['investment_account'] }}>
             <dt>上周交易量:
-            <dd>*<input type=text name=trading_vol value={{ vol['trading_vol'] }}>
-            <dd><input type=submit value=提交>
+            <dd>*<input type=text name=trading_vol value={{ vol_dict['trading_vol'] }}>
+			<dt>&nbsp;
+            <dd><input type=submit value=提交>&nbsp;&nbsp;
 			<a href="{{ url_for('back_stage_management') }}">返回</a>
         </dl>
     </form>

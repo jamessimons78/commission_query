@@ -7,13 +7,14 @@
         <p class=error><strong>出现错误:</strong> {{ error }}
     {% endif %}
 
-    <form action="{{ url_for('entering_dividend_submit') }}" method=post>
+    <form class=my_form action="{{ url_for('entering_dividend_submit') }}" method=post>
         <dl>
             <dt>MT4投资账号:
             <dd>*<input type=text name=investment_account value={{ dividend_dict['investment_account'] }}>
             <dt>上月分红:
             <dd>*<input type=text name=dividend value={{ dividend_dict['dividend'] }}>
-            <dd><input type=submit value=提交>
+			<dt>&nbsp;
+            <dd><input type=submit value=提交>&nbsp;&nbsp;
 			<a href="{{ url_for('back_stage_management') }}">返回</a>
         </dl>
     </form>

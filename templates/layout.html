@@ -2,19 +2,21 @@
 <html lang="zh-Hans">
     <head>
         <meta charset="utf-8">
-        <title>瑞投科技——查询系统</title>
+        <title>瑞投科技——佣金查询系统</title>
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     </head>
 
     <body>
         <div class=page>
-            <img src="static/logo.png">
+			<div class=logo>
+				<img src="static/logo.png">
+			</div>
 
             {% for message in get_flashed_messages() %}
                 <div class=flash>{{ message }}</div>
             {% endfor %}
 
-            <div class=metanav>
+            <div class=logout>
                 {% if session.logged_in %}
                     <a href="{{ url_for('logout') }}">退出</a>
                 {% endif %}
@@ -22,8 +24,9 @@
 
             {% block my_body %}{% endblock %}
 
-            <div class="link">
-                <a href="https://apply.swissquote.com/fx/?lang=cn&partnerid=7e709c47-1a3f-4c9a-a136-2417caa78c92&formName=MT4LIVEINDIV"
+            <div class=swissquote_link>
+                <br>
+				<a href="https://apply.swissquote.com/fx/?lang=cn&partnerid=7e709c47-1a3f-4c9a-a136-2417caa78c92&formName=MT4LIVEINDIV"
                    title="https://www.swissquote.com">瑞讯银行官网开户</a>
             </div>
         </div>

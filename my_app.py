@@ -147,7 +147,7 @@ def add_ib_submit():
             or (len(commission_account) == 0 and len(investment_account) == 0) \
             or len(referrer_account) == 0:
         rule = False
-        error = '您输入的经纪人资料有误，关键信息不能为空！'
+        error = '关键信息不能为空！'
     else:
         name_reg = r'^[A-Za-z][A-Za-z\s]+$'
         if not re.match(name_reg, ib_name):
@@ -223,11 +223,11 @@ def entering_vol():
         abort(401)
 
     # 初始化输入控件
-    vol = {}
-    vol['investment_account'] = ''
-    vol['trading_vol'] = ''
+    vol_dict = {}
+    vol_dict['investment_account'] = ''
+    vol_dict['trading_vol'] = ''
 
-    return render_template('entering_vol.html', vol=vol)
+    return render_template('entering_vol.html', vol_dict=vol_dict)
 
 
 @app.route('/entering_vol_submit', methods=['GET','POST'])
@@ -267,7 +267,7 @@ def entering_vol_submit():
             row = cur.fetchone()
             if row:
                 rule = False
-                error = '该账号今天已经录入过交易量了，请核实后再录入！'
+                error = '该账号今天已录入过交易量，请核实后再录入！'
 
     if rule:
         inputer = session.get('account')
@@ -280,12 +280,11 @@ def entering_vol_submit():
         return redirect(url_for('entering_vol'))
     else:
         # 当输入有误时，将原有输入内容传入新的输入页面
-        vol = {}
-        vol['investment_account'] = investment_account
-        vol['trading_vol'] = trading_vol
-        return render_template('entering_vol.html', error=error, vol=vol)
+        vol_dict = {}
+        vol_dict['investment_account'] = investment_account
+        vol_dict['trading_vol'] = trading_vol
+        return render_template('entering_vol.html', error=error, vol_dict=vol_dict)
     
-
 
 @app.route('/entering_dividend')
 def entering_dividend():
@@ -340,7 +339,7 @@ def entering_dividend_submit():
             row = cur.fetchone()
             if row:
                 rule = False
-                error = '该账号今天已经录入过分红了，请核实后再录入！'
+                error = '该账号今天已录入过分红，请核实后再录入！'
 
     if rule:
         inputer = session.get('account')
