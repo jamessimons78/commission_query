@@ -109,15 +109,27 @@ def show_detail_information():
     
     account = session['account']
     get_db()
-    cur = g.db.execute('SELECT user.ib_name, user.investment_account, trading_vol.trading_vol FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account WHERE (user.referrer_account==? AND trading_vol.input_date==(SELECT MAX(trading_vol.input_date) FROM trading_vol))', [account])
+    cur = g.db.execute('SELECT user.investment_account, user.ib_name, trading_vol.trading_vol, commission_points.commission_points, trading_vol.trading_vol*commission_points.commission_points FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account LEFT JOIN commission_points ON trading_vol.investment_account = commission_points.investment_account WHERE (user.referrer_account==? AND trading_vol.input_date==(SELECT MAX(trading_vol.input_date) FROM trading_vol))', [account])
     rows = cur.fetchall()
-    last_week = [[row[0], row[1], row[2]] for row in rows]
+    last_week = [[row[0], row[1], row[2], row[3], row[4]] for row in rows]
+    last_commission = 0
+    for row in rows:
+        last_commission += row[4]
+    last_commission = round(last_commission, 2)
 
-    cur = g.db.execute('SELECT user.ib_name, user.investment_account, SUM(trading_vol.trading_vol) FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account WHERE user.referrer_account==? GROUP BY trading_vol.investment_account', [account])
+    cur = g.db.execute('SELECT user.investment_account, user.ib_name, SUM(trading_vol.trading_vol), commission_points.commission_points, SUM(trading_vol.trading_vol)*commission_points.commission_points FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account LEFT JOIN commission_points ON trading_vol.investment_account = commission_points.investment_account WHERE user.referrer_account==? GROUP BY trading_vol.investment_account', [account])
     rows = cur.fetchall()
-    all = [[row[0], row[1], row[2]] for row in rows]
+    all = [[row[0], row[1], row[2], row[3], row[4]] for row in rows]
+    all_commission = 0
+    for row in rows:
+        all_commission += row[4]
+    all_commission = round(all_commission, 2)
 
-    return render_template('detail_information.html', last_week=last_week, all=all)
+    cur = g.db.execute('SELECT MAX(input_date) FROM trading_vol')
+    row = cur.fetchone()
+    expiration_date = row[0]
+
+    return render_template('detail_information.html', last_week=last_week, all=all, last_commission=last_commission, all_commission=all_commission, expiration_date=expiration_date)
 
 
 @app.route('/back_stage_management')

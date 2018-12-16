@@ -2,21 +2,21 @@
 <meta charset="utf-8">
 
 {% block my_body %}
-    <h2>详细返佣情况：</h2>
-
-    <ul class=vol>
-		<h3>以下是客户上周的交易量及佣金：</h3>
+    <h2>交易佣金分类统计：</h2>
+		<h3>以下是客户上周的交易量及佣金 {{ last_commission }} 美元：</h3>
 		<table cellspacing=13>
-			<th>姓名</th>
 			<th>账号</th>
-			<th>交易量</th>
-			<th>佣金</th>
+			<th>姓名</th>
+			<th>交易量(手)</th>
+			<th>点数</th>
+			<th>佣金($)</th>
 			{% for row in last_week %}
 				<tr>
 					<td>{{ row[0] }}</td>
 					<td>{{ row[1] }}</td>
 					<td>{{ row[2] }}</td>
 					<td>{{ row[3] }}</td>
+					<td>{{ row[4] }}</td>
 				</tr>
 			{% else %}
 				<li><em>您的客户上周没有交易！</em>
@@ -24,26 +24,27 @@
 		</table>
 
 		<br>
-		<h3>以下是客户总的交易量及佣金：</h3>
+		<h3>以下是客户总的交易量及佣金 {{ all_commission }} 美元：</h3>
 		<table cellspacing=13>
-			<th>姓名</th>
 			<th>账号</th>
-			<th>交易量</th>
-			<th>佣金</th>
+			<th>姓名</th>
+			<th>交易量(手)</th>
+			<th>点数</th>
+			<th>佣金($)</th>
 			{% for row in all %}
 				<tr>
 					<td>{{ row[0] }}</td>
 					<td>{{ row[1] }}</td>
 					<td>{{ row[2] }}</td>
 					<td>{{ row[3] }}</td>
+					<td>{{ row[4] }}</td>
 				</tr>
 			{% else %}
 				<li><em>您的客户还没有交易！</em>
 			{% endfor %}
 		</table>
+		<h3 text-align="right">统计截止日期：{{ expiration_date }}</h3>
 
-		<br>
-		<a href="{{ url_for('show_base_information') }}">返回</a>
-    </ul>
+		<a href="{{ url_for('show_base_information') }}" >返回</a>
 
 {% endblock %}

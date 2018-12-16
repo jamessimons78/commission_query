@@ -20,3 +20,10 @@
   [dividend] DECIMAL(6, 2) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(8) NOT NULL);
+  
+  CREATE TABLE IF NOT EXISTS [commission_points](
+  [investment_account] CHAR(8) NOT NULL, 
+  [referrer_account] CHAR(8) NOT NULL, 
+  [commission_points] INTEGER NOT NULL, 
+  [input_date] TEXT(10) NOT NULL, 
+  [inputer] CHAR(8) NOT NULL);

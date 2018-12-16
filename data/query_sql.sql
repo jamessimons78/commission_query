@@ -15,3 +15,5 @@ SELECT user.ib_name as '投资者', user.investment_account as '账户', SUM(tra
 
 
 SELECT user.ib_name as '投资者', user.investment_account as '账户', trading_vol.trading_vol AS '上周交易量' FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account WHERE (user.referrer_account=='1030918' AND trading_vol.input_date==(SELECT MAX(trading_vol.input_date) FROM trading_vol));
+
+SELECT user.ib_name as '投资者', user.investment_account as '账户', trading_vol.trading_vol AS '上周交易量', commission_points.commission_points AS '点数', trading_vol.trading_vol*commission_points.commission_points AS '佣金' FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account LEFT JOIN commission_points ON trading_vol.investment_account = commission_points.investment_account WHERE (user.referrer_account=='1030918' AND trading_vol.input_date==(SELECT MAX(trading_vol.input_date) FROM trading_vol));
