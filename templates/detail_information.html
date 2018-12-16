@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+<meta charset="utf-8">
+
+{% block my_body %}
+    <h2>详细返佣情况：</h2>
+
+    <ul class=clients>
+		<h3>以下是您的客户上周的交易量：</h3>
+		{% for row in last_week %}
+			<li><h3>{{ row[0] }}, {{ row[1] }}, {{ row[2] }}</h3>
+        {% else %}
+            <li><em>您的客户上周没有交易！</em>
+		{% endfor %}
+
+		<br>
+		<h3>以下是您的客户总交易量：</h3>
+		{% for row in all %}
+			<li><h3>{{ row[0] }}, {{ row[1] }}, {{ row[2] }}</h3>
+        {% else %}
+            <li><em>您的客户还没有交易！</em>
+		{% endfor %}
+
+		<a href="{{ url_for('show_base_information') }}">返回</a>
+    </ul>
+
+{% endblock %}

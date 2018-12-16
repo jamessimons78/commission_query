@@ -90,6 +90,7 @@ def show_base_information():
     '''
     if not session.get('logged_in'):
         abort(401)
+    
     account = session['account']
     get_db()
     cur = g.db.execute("select ib_name from user where referrer_account==?", [account])
@@ -98,12 +99,25 @@ def show_base_information():
     return render_template('base_information.html', clients=clients)
 
 
-@app.route('/commission_query')
-def commission_query():
+@app.route('/show_detail_information')
+def show_detail_information():
     '''
-    代理查询自己的返佣情况
+    代理查询自己的返佣详细情况
     '''
-    pass
+    if not session.get('logged_in'):
+        abort(401)
+    
+    account = session['account']
+    get_db()
+    cur = g.db.execute('SELECT user.ib_name, user.investment_account, trading_vol.trading_vol FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account WHERE (user.referrer_account==? AND trading_vol.input_date==(SELECT MAX(trading_vol.input_date) FROM trading_vol))', [account])
+    rows = cur.fetchall()
+    last_week = [[row[0], row[1], row[2]] for row in rows]
+
+    cur = g.db.execute('SELECT user.ib_name, user.investment_account, SUM(trading_vol.trading_vol) FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account WHERE user.referrer_account==? GROUP BY trading_vol.investment_account', [account])
+    rows = cur.fetchall()
+    all = [[row[0], row[1], row[2]] for row in rows]
+
+    return render_template('detail_information.html', last_week=last_week, all=all)
 
 
 @app.route('/back_stage_management')
@@ -111,6 +125,9 @@ def back_stage_management():
     '''
     后台管理：添加代理资料、输入每周交易量及每月盈利分红
     '''
+    if not session.get('logged_in'):
+        abort(401)
+
     return render_template('back_stage_management.html')
 
 
@@ -136,6 +153,9 @@ def add_ib():
 
 @app.route('/add_ib_submit', methods=['GET','POST'])
 def add_ib_submit():
+    if not session.get('logged_in'):
+        abort(401)
+
     ib_name = request.form['ib_name']
     commission_account = request.form['commission_account']
     password = request.form['password']
@@ -234,6 +254,9 @@ def entering_vol():
 
 @app.route('/entering_vol_submit', methods=['GET','POST'])
 def entering_vol_submit():
+    if not session.get('logged_in'):
+        abort(401)
+
     investment_account = request.form['investment_account']
     trading_vol = request.form['trading_vol']
 
@@ -306,6 +329,9 @@ def entering_dividend():
 
 @app.route('/entering_dividend_submit', methods=['GET','POST'])
 def entering_dividend_submit():
+    if not session.get('logged_in'):
+        abort(401)
+
     investment_account = request.form['investment_account']
     dividend = request.form['dividend']
 
