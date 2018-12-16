@@ -2,11 +2,11 @@
 <meta charset="utf-8">
 
 {% block my_body %}
-    <h4>您名下的客户：</h4>
+    <h2>您名下的客户：</h2>
 
     <ul class=clients>
         {% for client in clients %}
-            <li><h5>{{ client }}</h5>
+            <li><h3>{{ client }}</h3>
         {% else %}
             <li><em>您还没有客户！</em>
         {% endfor %}
