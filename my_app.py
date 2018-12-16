@@ -43,7 +43,9 @@ def index():
     '''
     首页直接登录
     '''
-    return render_template('login.html')
+    # 初始化输入控件
+    account = ''
+    return render_template('login.html', account=account)
 
 
 @app.route('/login', methods=['GET','POST'])
@@ -53,32 +55,32 @@ def login():
     '''
     account = request.form['account']
     password = request.form['password']
-    account_reg = r'^[1-9]\d+$'
-    if not re.match(account_reg, account):
-        rule = False
-        error = '您输入的经纪人账号不符合MT4账号的规则，请核实后再录入！'
-    elif len(password)==0:
-        rule = False
-        error = '需要输入密码才能登录！'
-    else:
-        get_db()
-        cur = g.db.execute("select commission_account, manager from user where commission_account==? and password ==?", [account, password])
-        row = cur.fetchone()
+    if len(account) > 0 and len(password) > 0:
+        account_reg = r'^[1-9]\d+$'
+        if not re.match(account_reg, account):
+            error = '您输入的经纪人账号不符合MT4账号的规则，请核实后再录入！'
+        else:
+            get_db()
+            cur = g.db.execute("select commission_account, manager from user where commission_account==? and password ==?", [account, password])
+            row = cur.fetchone()
 
-        if not row:
-            error = '您输入的账号或密码有误，或系统里还没有您的佣金账号！'
-        elif account == row[0]:
-            session['logged_in'] = True
-            session['account'] = account
-            # 普通代理登录
-            if row[1] == 0:
-                flash('您已经成功登录——佣金查询系统！')
-                return redirect(url_for('show_base_information'))
-            # 管理员登录
-            elif row[1] == 1:
-                flash('您已经登录——后台管理系统！')
-                return redirect(url_for('back_stage_management'))
-    return render_template('login.html', error=error)
+            if not row:
+                error = '您输入的账号或密码有误，或系统里还没有您的佣金账号！'
+            elif account == row[0]:
+                session['logged_in'] = True
+                session['account'] = account
+                # 普通代理登录
+                if row[1] == 0:
+                    flash('您已经成功登录——佣金查询系统！')
+                    return redirect(url_for('show_base_information'))
+                # 管理员登录
+                elif row[1] == 1:
+                    flash('您已经登录——后台管理系统！')
+                    return redirect(url_for('back_stage_management'))
+    else:
+        error = 'MT4佣金账号，或密码不能为空！'
+    
+    return render_template('login.html', error=error, account=account)
 
 
 @app.route('/show_base_information')

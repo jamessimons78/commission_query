@@ -9,8 +9,8 @@
 
     <form class=my_form action="{{ url_for('login') }}" method=post>
         <dl>
-            <dt>您的佣金账号:
-            <dd><input type=text name=account>
+            <dt>您的MT4佣金账号:
+            <dd><input type=text name=account value={{ account }}>
             <dt>只读密码:
             <dd><input type=password name=password>
 			<dt>&nbsp;
