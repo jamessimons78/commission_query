@@ -315,6 +315,7 @@ def commission_points_setting_submit():
         input_date = dt.strftime("%Y-%m-%d")
         inputer = session.get('account')
 
+        get_db()
         for i in range(len(referrer_accounts)):
             if len(commission_points[i]) > 0:
                 g.db.execute('insert into commission_points (investment_account, referrer_account, commission_points, input_date, inputer) '
@@ -333,10 +334,10 @@ def get_referrer_account(investment_account):
     '''
     获取指定投资账号的所有相关推荐人的账号
     '''
+    referrer_account = []
     get_db()
     cur = g.db.execute('select referrer_account from user where investment_account==?', [investment_account])
     row = cur.fetchone()
-    referrer_account = []
     referrer_account.append(row[0])
     a = row[0]
     for i in range(5):
@@ -553,6 +554,7 @@ def logout():
     '''
     session.pop('logged_in', None)
     session.pop('account', None)
+    session.pop('investment_account', None)
     flash('您已经安全退出查询系统！')
     return render_template('login.html')
 
