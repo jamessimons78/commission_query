@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+<meta charset="utf-8">
+
+{% block my_body %}
+    <h2>录入上周交易量</h2>
+    {% if error %}
+        <p class=error><strong>操作确认:</strong> {{ error }}
+    {% endif %}
+
+    <form class=my_form action="{{ url_for('entering_vol_confirm') }}" method=post>
+        <dl>
+            <dt>MT4投资账号:
+            <dd>*{{ vol_dict['investment_account'] }}
+            <dt>上周交易量:
+            <dd>*{{ vol_dict['trading_vol'] }}
+			<dt>&nbsp;
+            <dd><input type=submit value=确认提交>&nbsp;&nbsp;
+			<a href="{{ url_for('entering_vol') }}">重新输入</a>
+        </dl>
+    </form>
+{% endblock %}

@@ -109,27 +109,30 @@ def show_detail_information():
     
     account = session['account']
     get_db()
-    cur = g.db.execute('SELECT user.investment_account, user.ib_name, trading_vol.trading_vol, commission_points.commission_points, trading_vol.trading_vol*commission_points.commission_points FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account LEFT JOIN commission_points ON trading_vol.investment_account = commission_points.investment_account WHERE (user.referrer_account==? AND trading_vol.input_date==(SELECT MAX(trading_vol.input_date) FROM trading_vol))', [account])
+    cur = g.db.execute('SELECT commission.investment_account, user.ib_name, commission.trading_vol, commission.commission_points, commission.commission '
+                       'FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account '
+                       'WHERE (commission.referrer_account==? AND commission.input_date==(SELECT MAX(commission.input_date) FROM commission))', [account])
     rows = cur.fetchall()
     last_week = [[row[0], row[1], row[2], row[3], row[4]] for row in rows]
-    last_commission = 0
+    commission = [0, 0]
     for row in rows:
-        last_commission += row[4]
-    last_commission = round(last_commission, 2)
+        commission[0] += row[4]
+    commission[0] = round(commission[0], 2)
 
-    cur = g.db.execute('SELECT user.investment_account, user.ib_name, SUM(trading_vol.trading_vol), commission_points.commission_points, SUM(trading_vol.trading_vol)*commission_points.commission_points FROM user LEFT JOIN trading_vol ON user.investment_account = trading_vol.investment_account LEFT JOIN commission_points ON trading_vol.investment_account = commission_points.investment_account WHERE user.referrer_account==? GROUP BY trading_vol.investment_account', [account])
+    cur = g.db.execute('SELECT commission.investment_account, user.ib_name, sum(commission.trading_vol), commission.commission_points, sum(commission.commission) '
+                       'FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account '
+                       'WHERE commission.referrer_account==? GROUP BY commission.investment_account', [account])
     rows = cur.fetchall()
     all = [[row[0], row[1], row[2], row[3], row[4]] for row in rows]
-    all_commission = 0
     for row in rows:
-        all_commission += row[4]
-    all_commission = round(all_commission, 2)
+        commission[1] += row[4]
+    commission[1] = round(commission[1], 2)
 
     cur = g.db.execute('SELECT MAX(input_date) FROM trading_vol')
     row = cur.fetchone()
     expiration_date = row[0]
 
-    return render_template('detail_information.html', last_week=last_week, all=all, last_commission=last_commission, all_commission=all_commission, expiration_date=expiration_date)
+    return render_template('detail_information.html', last_week=last_week, all=all, commission=commission, expiration_date=expiration_date)
 
 
 @app.route('/back_stage_management')
@@ -306,21 +309,53 @@ def entering_vol_submit():
                 rule = False
                 error = '该账号今天已录入过交易量，请核实后再录入！'
 
-    if rule:
-        inputer = session.get('account')
-        # get_db()
-        g.db.execute('insert into trading_vol (investment_account, trading_vol, input_date, inputer) '
-                     'values (?, ?, ?, ?)', [investment_account, trading_vol, input_date, inputer])
-        g.db.commit()
+    vol_dict = {}
+    vol_dict['investment_account'] = investment_account
+    vol_dict['trading_vol'] = trading_vol
 
-        flash('已添加账号 ' + investment_account + ' 的交易量')
-        return redirect(url_for('entering_vol'))
+    if rule:
+        session['investment_account'] = investment_account
+        session['trading_vol'] = trading_vol
+        error = '以下数据是否正确，确定要提交？'
+        return render_template('entering_vol_confirm.html', error=error, vol_dict=vol_dict)
+
     else:
         # 当输入有误时，将原有输入内容传入新的输入页面
-        vol_dict = {}
-        vol_dict['investment_account'] = investment_account
-        vol_dict['trading_vol'] = trading_vol
         return render_template('entering_vol.html', error=error, vol_dict=vol_dict)
+
+
+@app.route('/entering_vol_confirm', methods=['GET','POST'])
+def entering_vol_confirm():
+    if not session.get('logged_in'):
+        abort(401)
+
+    investment_account = session.get('investment_account')
+    trading_vol = session.get('trading_vol')
+    session.pop('investment_account', None)
+    session.pop('trading_vol', None)
+
+    dt = datetime.now()
+    input_date = dt.strftime("%Y-%m-%d")
+    inputer = session.get('account')
+    get_db()
+    # 添加交易量到trading_vol表中
+    g.db.execute('insert into trading_vol (investment_account, trading_vol, input_date, inputer) '
+                 'values (?, ?, ?, ?)', [investment_account, trading_vol, input_date, inputer])
+    g.db.commit()
+
+    cur = g.db.execute("select referrer_account, commission_points from commission_points where investment_account==?", [investment_account])
+    rows = cur.fetchall()
+    # 添加佣金到commission表中，每一级推荐人都相应的添加
+    for row in rows:
+        referrer_account = row[0]
+        commission_points = row[1]
+        commission = round(float(trading_vol) * commission_points, 2)
+        g.db.execute('insert into commission (investment_account, trading_vol, referrer_account, commission_points, commission, input_date, inputer) '
+                     'values (?, ?, ?, ?, ?, ?, ?)', [investment_account, trading_vol, referrer_account, commission_points, commission, input_date, inputer])
+        g.db.commit()
+
+    flash('已添加账号 ' + investment_account + ' 的交易量，和各级推荐人的佣金')
+    return redirect(url_for('entering_vol'))
     
 
 @app.route('/entering_dividend')

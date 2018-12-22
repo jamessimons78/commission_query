@@ -9,21 +9,30 @@
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(8) NOT NULL);
   
-  CREATE TABLE IF NOT EXISTS [trading_vol](
+CREATE TABLE IF NOT EXISTS [trading_vol](
   [investment_account] CHAR(8) NOT NULL, 
   [trading_vol] DECIMAL(6, 2) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(8) NOT NULL);
   
-  CREATE TABLE IF NOT EXISTS [dividend](
+CREATE TABLE IF NOT EXISTS [dividend](
   [investment_account] CHAR(8) NOT NULL, 
   [dividend] DECIMAL(6, 2) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(8) NOT NULL);
   
-  CREATE TABLE IF NOT EXISTS [commission_points](
+CREATE TABLE IF NOT EXISTS [commission_points](
   [investment_account] CHAR(8) NOT NULL, 
   [referrer_account] CHAR(8) NOT NULL, 
+  [commission_points] DECIMAL(4, 1) NOT NULL, 
+  [input_date] TEXT(10) NOT NULL, 
+  [inputer] CHAR(8) NOT NULL);
+
+CREATE TABLE IF NOT [commission](
+  [investment_account] CHAR(8) NOT NULL, 
+  [trading_vol] DECIMAL(6, 2) NOT NULL, 
+  [referrer_account] CHAR(8) NOT NULL, 
   [commission_points] INTEGER NOT NULL, 
+  [commission] DECIMAL(8, 2) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(8) NOT NULL);
