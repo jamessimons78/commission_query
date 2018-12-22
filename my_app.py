@@ -289,7 +289,7 @@ def commission_points_setting_submit():
     referrer_accounts = get_referrer_account(investment_account)
 
     rule = True
-    points_reg = r'^[1-9]|[1-9][0-9]$'
+    points_reg = r'^(([1]{1}[0-8]{1})|([1-9]{1})|([0-9]{1}\.[0-9][1-9]?)|([1]{1}[0-7]{1}\.[0-9][1-9]?))$'
     commission_points = []
     for referrer in referrer_accounts:
         points = request.form[referrer]
