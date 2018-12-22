@@ -289,7 +289,7 @@ def commission_points_setting_submit():
     referrer_accounts = get_referrer_account(investment_account)
 
     rule = True
-    points_reg = r'^(([1]{1}[0-8]{1})|([1-9]{1})|([0-9]{1}\.[0-9][1-9]?)|([1]{1}[0-7]{1}\.[0-9][1-9]?))$'
+    points_reg = r'^(([1-9]{1})|([1]{1}[0-8]{1})|([0-9]{1}\.[0-9][1-9]?)|([1]{1}[0-7]{1}\.[0-9][1-9]?))$'
     commission_points = []
     for referrer in referrer_accounts:
         points = request.form[referrer]
@@ -301,6 +301,14 @@ def commission_points_setting_submit():
     if rule and len(commission_points[0]) == 0:
         rule = False
         error = '直接推荐人的佣金点数必须设置！'
+    if rule:
+        s = 0
+        for points in commission_points:
+            if len(points) > 0:
+                s += float(points)
+        if s > 18:
+            rule = False
+            error = '佣金点数设置错误，总数已超18美金/手！'
     
     if rule:
         dt = datetime.now()
