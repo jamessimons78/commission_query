@@ -109,16 +109,20 @@ def show_detail_information():
     
     account = session['account']
     get_db()
+    # 查询上周交易量及佣金
     cur = g.db.execute('SELECT commission.investment_account, user.ib_name, commission.trading_vol, commission.commission_points, commission.commission '
                        'FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account '
                        'WHERE (commission.referrer_account==? AND commission.input_date==(SELECT MAX(commission.input_date) FROM commission))', [account])
     rows = cur.fetchall()
+    # 将查询结果用last_week列表变量传给网页
     last_week = [[row[0], row[1], row[2], row[3], row[4]] for row in rows]
+    # 佣金小计和总计
     commission = [0, 0]
     for row in rows:
         commission[0] += row[4]
     commission[0] = round(commission[0], 2)
 
+    # 查询总交易量及佣金
     cur = g.db.execute('SELECT commission.investment_account, user.ib_name, sum(commission.trading_vol), commission.commission_points, sum(commission.commission) '
                        'FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account '
                        'WHERE commission.referrer_account==? GROUP BY commission.investment_account', [account])
@@ -128,6 +132,7 @@ def show_detail_information():
         commission[1] += row[4]
     commission[1] = round(commission[1], 2)
 
+    # 查询截止日期
     cur = g.db.execute('SELECT MAX(input_date) FROM trading_vol')
     row = cur.fetchone()
     expiration_date = row[0]
@@ -232,13 +237,16 @@ def add_ib_submit():
         dt = datetime.now()
         input_date = dt.strftime("%Y-%m-%d")
         inputer = session.get('account')
-        # get_db()
-        g.db.execute('insert into user (ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer) '
-                     'values (?, ?, ?, ?, ?, ?, ? ,?)', [ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer])
+        g.db.execute('insert into user (ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer) values (?, ?, ?, ?, ?, ?, ? ,?)', [ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer])
         g.db.commit()
 
-        flash('已添加 ' + ib_name + ' 的资料')
-        return redirect(url_for('add_ib'))
+        if len(investment_account) > 0:
+            flash('已添加 ' + ib_name + ' 的资料，现在设置相关推荐人的佣金点数')
+            session['investment_account'] = investment_account
+            return redirect(url_for('commission_points_setting'))
+        else:
+            flash('已添加 ' + ib_name + ' 的资料')
+            return redirect(url_for('add_ib'))
     else:
         # 当输入有误时，将原有输入内容传入新的输入页面
         ib_info = {}
@@ -249,6 +257,102 @@ def add_ib_submit():
         ib_info['referrer_account'] = referrer_account
         ib_info['referrer_name'] = referrer_name
         return render_template('add_ib.html', error=error, ib_info=ib_info)
+
+
+@app.route('/commission_points_setting', methods=['GET','POST'])
+def commission_points_setting():
+    '''
+    添加经纪人或客户账号后，设置相关推荐人的佣金点数
+    '''
+    if not session.get('logged_in'):
+        abort(401)
+
+    # 获取本次添加的投资账号的所有相关推荐人的账号
+    investment_account = session.get('investment_account')
+    referrer_account = get_referrer_account(investment_account)
+    
+    # 获取推荐人账号对应的姓名
+    referrers = get_referrers(referrer_account)
+    
+    return render_template('commission_points.html', referrers=referrers)
+
+
+@app.route('/commission_points_setting_submit', methods=['GET','POST'])
+def commission_points_setting_submit():
+    '''
+    添加经纪人或客户账号后，设置相关推荐人的佣金点数
+    '''
+    if not session.get('logged_in'):
+        abort(401)
+
+    investment_account = session.get('investment_account')
+    referrer_accounts = get_referrer_account(investment_account)
+
+    rule = True
+    points_reg = r'^[1-9]|[1-9][0-9]$'
+    commission_points = []
+    for referrer in referrer_accounts:
+        points = request.form[referrer]
+        commission_points.append(points)
+        if rule and len(points) > 0:
+            if not re.match(points_reg, points):
+                rule = False
+                error = '您输入的佣金点数(美金/手)不符合要求，请核实后再录入！'
+    if rule and len(commission_points[0]) == 0:
+        rule = False
+        error = '直接推荐人的佣金点数必须设置！'
+    
+    if rule:
+        dt = datetime.now()
+        input_date = dt.strftime("%Y-%m-%d")
+        inputer = session.get('account')
+
+        for i in range(len(referrer_accounts)):
+            if len(commission_points[i]) > 0:
+                g.db.execute('insert into commission_points (investment_account, referrer_account, commission_points, input_date, inputer) '
+                             'values (?, ?, ?, ?, ?)', [investment_account, referrer_accounts[i], commission_points[i], input_date, inputer])
+                g.db.commit()
+        
+        session.pop('investment_account', None)
+        flash('已添加 ' + investment_account + '，并设置了推荐人佣金点数')
+        return redirect(url_for('add_ib'))
+    else:
+        referrers = get_referrers(referrer_accounts)
+        return render_template('commission_points.html', error=error, referrers=referrers)
+
+
+def get_referrer_account(investment_account):
+    '''
+    获取指定投资账号的所有相关推荐人的账号
+    '''
+    get_db()
+    cur = g.db.execute('select referrer_account from user where investment_account==?', [investment_account])
+    row = cur.fetchone()
+    referrer_account = []
+    referrer_account.append(row[0])
+    a = row[0]
+    for i in range(5):
+        cur = g.db.execute('select referrer_account from user where commission_account==?', [a])
+        row = cur.fetchone()
+        if row[0] is not None:
+            referrer_account.append(row[0])
+            a = row[0]
+        else:
+            break
+    return referrer_account
+
+
+def get_referrers(referrer_account):
+    '''
+    获取指定推荐人账号对应的姓名
+    '''
+    referrers = []
+    get_db()
+    for a in referrer_account:
+        cur = g.db.execute('select commission_account, ib_name from user where commission_account==?', [a])
+        row = cur.fetchone()
+        referrers.append(dict(account=row[0], name=row[1]))
+    return referrers
 
 
 @app.route('/entering_vol')
@@ -343,6 +447,7 @@ def entering_vol_confirm():
                  'values (?, ?, ?, ?)', [investment_account, trading_vol, input_date, inputer])
     g.db.commit()
 
+    # 查询该投资账号有哪些推荐人以及相应的佣金点数
     cur = g.db.execute("select referrer_account, commission_points from commission_points where investment_account==?", [investment_account])
     rows = cur.fetchall()
     # 添加佣金到commission表中，每一级推荐人都相应的添加

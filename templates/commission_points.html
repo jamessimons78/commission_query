@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+<meta charset="utf-8">
+
+{% block my_body %}
+    <h2>{{ session['investment_account'] }}的推荐人佣金设置</h2>
+    {% if error %}
+        <p class=error><strong>出现错误:</strong> {{ error }}
+    {% endif %}
+
+    <form class=my_form action="{{ url_for('commission_points_setting_submit') }}" method=post>
+        <dl>
+			<table cellspacing=13>
+				<th>推荐人账号</th>
+				<th>推荐人姓名</th>
+				<th>佣金(美金/手)</th>
+				{% for referrer in referrers %}
+					<tr>
+						<td>{{ referrer.account }}</td>
+						<td>{{ referrer.name }}</td>
+						<td><input type="text" name={{ referrer.account }}></td>
+					</tr>
+				{% endfor %}
+			</table>
+
+			<dt>&nbsp;
+			<dd><input type=submit value=提交佣金设置>&nbsp;&nbsp;
+			<a href="{{ url_for('back_stage_management') }}">返回</a>
+        </dl>
+    </form>
+{% endblock %}

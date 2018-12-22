@@ -21,3 +21,6 @@ SELECT user.ib_name as '投资者', user.investment_account as '账户', trading
 SELECT commission.investment_account, user.ib_name, sum(commission.trading_vol), commission.commission_points, sum(commission.commission) FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account WHERE commission.referrer_account=='1030918' GROUP BY commission.investment_account
 
 SELECT commission.investment_account, user.ib_name, commission.trading_vol, commission.commission_points, commission.commission FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account WHERE (commission.referrer_account=='1030918' AND commission.input_date==(SELECT MAX(commission.input_date) FROM commission))
+
+SELECT * FROM user
+

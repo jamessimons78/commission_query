@@ -2,14 +2,14 @@
 <meta charset="utf-8">
 
 {% block my_body %}
-    <h2>添加新经纪人</h2>
+    <h2>添加经纪人或客户</h2>
     {% if error %}
         <p class=error><strong>出现错误:</strong> {{ error }}
     {% endif %}
 
     <form class=my_form action="{{ url_for('add_ib_submit') }}" method=post>
         <dl>
-            <dt>经纪人姓名*:
+            <dt>经纪人/客户姓名*:
             <dd><input type=text name=ib_name value={{ ib_info['ib_name'] }}>
             <dt>佣金账号:
             <dd><input type=text name=commission_account value={{ ib_info['commission_account'] }}>
