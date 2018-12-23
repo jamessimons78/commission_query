@@ -287,22 +287,23 @@ def modify_commission_points():
         if not re.match(account_reg, investment_account):
             rule = False
             error = '您输入的投资账号不符合MT4账号的规则，请核实后再录入！'
+        else:
+            if rule:
+                get_db()
+                cur = g.db.execute("select investment_account from user where investment_account==?", [investment_account])
+                row = cur.fetchone()
+                if not row:
+                    rule = False
+                    error = '系统里没有您输入的投资账号，请核实后再录入！'
+                else:
+                    session['investment_account'] = investment_account
+                    points = get_points(investment_account)
+                    return render_template('modify_commission_points.html', points=points)
     else:
         rule = False
         error = 'MT4投资账号不能为空！'
-
-    if rule:
-        get_db()
-        cur = g.db.execute("select investment_account from user where investment_account==?", [investment_account])
-        row = cur.fetchone()
-        if not row:
-            rule = False
-            error = '系统里没有您输入的投资账号，请核实后再录入！'
-            return render_template('modify_commission_points_index.html', error=error, investment_account=investment_account)
-        else:
-            session['investment_account'] = investment_account
-            points = get_points(investment_account)
-            return render_template('modify_commission_points.html', points=points)
+    
+    return render_template('modify_commission_points_index.html', error=error, investment_account=investment_account)
 
 
 @app.route('/modify_commission_points_submit', methods=['GET','POST'])
