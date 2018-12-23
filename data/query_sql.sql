@@ -22,5 +22,5 @@ SELECT commission.investment_account, user.ib_name, sum(commission.trading_vol),
 
 SELECT commission.investment_account, user.ib_name, commission.trading_vol, commission.commission_points, commission.commission FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account WHERE (commission.referrer_account=='1030918' AND commission.input_date==(SELECT MAX(commission.input_date) FROM commission))
 
-SELECT * FROM user
+SELECT user.ib_name FROM commission_points LEFT JOIN user ON user.investment_account = commission_points.investment_account WHERE commission_points.referrer_account=='1030918'
 

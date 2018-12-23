@@ -93,7 +93,8 @@ def show_base_information():
     
     account = session['account']
     get_db()
-    cur = g.db.execute("select ib_name from user where referrer_account==?", [account])
+    cur = g.db.execute('SELECT user.ib_name FROM commission_points LEFT JOIN user ON user.investment_account = commission_points.investment_account '
+                       'WHERE commission_points.referrer_account==?', [account])
     rows = cur.fetchall()
     clients = [row[0] for row in rows]
     return render_template('base_information.html', clients=clients)
