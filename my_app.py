@@ -260,6 +260,129 @@ def add_ib_submit():
         return render_template('add_ib.html', error=error, ib_info=ib_info)
 
 
+@app.route('/modify_commission_points_index')
+def modify_commission_points_index():
+    '''
+    后台管理：修改推荐人佣金点数
+    '''
+    if not session.get('logged_in'):
+        abort(401)
+
+    # 初始化输入控件
+    investment_account = ''
+
+    return render_template('modify_commission_points_index.html', investment_account=investment_account)
+
+
+@app.route('/modify_commission_points', methods=['GET','POST'])
+def modify_commission_points():
+    if not session.get('logged_in'):
+        abort(401)
+    
+    investment_account = request.form['investment_account']
+
+    rule = True
+    if len(investment_account) > 0:
+        account_reg = r'^[1-9]\d+$'
+        if not re.match(account_reg, investment_account):
+            rule = False
+            error = '您输入的投资账号不符合MT4账号的规则，请核实后再录入！'
+    else:
+        rule = False
+        error = 'MT4投资账号不能为空！'
+
+    if rule:
+        get_db()
+        cur = g.db.execute("select investment_account from user where investment_account==?", [investment_account])
+        row = cur.fetchone()
+        if not row:
+            rule = False
+            error = '系统里没有您输入的投资账号，请核实后再录入！'
+            return render_template('modify_commission_points_index.html', error=error, investment_account=investment_account)
+        else:
+            session['investment_account'] = investment_account
+            points = get_points(investment_account)
+            return render_template('modify_commission_points.html', points=points)
+
+
+@app.route('/modify_commission_points_submit', methods=['GET','POST'])
+def modify_commission_points_submit():
+    if not session.get('logged_in'):
+        abort(401)
+    
+    investment_account = session.get('investment_account')
+    referrer_accounts = get_referrer_account(investment_account)
+
+    rule = True
+    points_reg = r'^(([0-9]{1})|([1]{1}[0-8]{1})|([0-9]{1}\.[0-9][1-9]?)|([1]{1}[0-7]{1}\.[0-9][1-9]?))$'
+    commission_points = []
+    for referrer in referrer_accounts:
+        points = request.form[referrer]
+        commission_points.append(points)
+        if rule and len(points) > 0:
+            if not re.match(points_reg, points):
+                rule = False
+                error = '您输入的佣金点数(美金/手)不符合要求，请核实后再录入！'
+    if rule:
+        if len(commission_points[0]) == 0:
+            rule = False
+            error = '直接推荐人的佣金点数必须设置！'
+        elif float(commission_points[0]) == 0:
+            rule = False
+            error = '直接推荐人的佣金点数必须设置！'
+    if rule:
+        s = 0
+        for points in commission_points:
+            if len(points) > 0:
+                s += float(points)
+        if s > 18:
+            rule = False
+            error = '佣金点数设置错误，总数已超18美金/手！'
+    
+    if rule:
+        dt = datetime.now()
+        input_date = dt.strftime("%Y-%m-%d")
+        inputer = session.get('account')
+
+        get_db()
+        for i in range(len(referrer_accounts)):
+            if len(commission_points[i]) > 0:
+                if float(commission_points[i]) >0:
+                    cur = g.db.execute('select commission_points from commission_points '
+                                       'where investment_account==? and referrer_account==?', [investment_account, referrer_accounts[i]])
+                    row = cur.fetchone()
+                    if row:
+                        if row[0] != float(commission_points[i]):
+                            g.db.execute('update commission_points set commission_points = ? '
+                                         'where investment_account==? and referrer_account==?', [float(commission_points[i]), investment_account, referrer_accounts[i]])
+                            g.db.commit()
+                    else:
+                        g.db.execute('insert into commission_points (investment_account, referrer_account, commission_points, input_date, inputer) '
+                                     'values (?, ?, ?, ?, ?)', [investment_account, referrer_accounts[i], commission_points[i], input_date, inputer])
+                        g.db.commit()
+                else:
+                    cur = g.db.execute('select rowid from commission_points '
+                                       'where investment_account==? and referrer_account==?', [investment_account, referrer_accounts[i]])
+                    row = cur.fetchone()
+                    if row:
+                        g.db.execute('delete from commission_points where rowid==?', [row[0]])
+                        g.db.commit()
+            else:
+                cur = g.db.execute('select rowid from commission_points '
+                                   'where investment_account==? and referrer_account==?', [investment_account, referrer_accounts[i]])
+                row = cur.fetchone()
+                if row:
+                    g.db.execute('delete from commission_points where rowid==?', [row[0]])
+                    g.db.commit()
+        
+        session.pop('investment_account', None)
+        flash('已修改 ' + investment_account + '，账号的推荐人佣金点数')
+        return redirect(url_for('back_stage_management'))
+    else:
+        points = get_points(investment_account)
+        return render_template('modify_commission_points.html', error=error, points=points)
+
+
 @app.route('/commission_points_setting', methods=['GET','POST'])
 def commission_points_setting():
     '''
@@ -299,9 +422,13 @@ def commission_points_setting_submit():
             if not re.match(points_reg, points):
                 rule = False
                 error = '您输入的佣金点数(美金/手)不符合要求，请核实后再录入！'
-    if rule and len(commission_points[0]) == 0:
-        rule = False
-        error = '直接推荐人的佣金点数必须设置！'
+    if rule:
+        if len(commission_points[0]) == 0:
+            rule = False
+            error = '直接推荐人的佣金点数必须设置！'
+        elif float(commission_points[0]) == 0:
+            rule = False
+            error = '直接推荐人的佣金点数必须设置！'
     if rule:
         s = 0
         for points in commission_points:
@@ -363,6 +490,24 @@ def get_referrers(referrer_account):
         row = cur.fetchone()
         referrers.append(dict(account=row[0], name=row[1]))
     return referrers
+
+
+def get_points(investment_account):
+    '''
+    获取指定投资账号的所有推荐人账号、姓名和佣金点数
+    '''
+    referrer_account = get_referrer_account(investment_account)
+    points = get_referrers(referrer_account)
+    get_db()
+    for a in points:
+        cur = g.db.execute('select commission_points from commission_points '
+                           'where investment_account==? and referrer_account==?', [investment_account, a['account']])
+        row = cur.fetchone()
+        if row:
+            a['point'] = row[0]
+        else:
+            a['point'] = 0
+    return points
 
 
 @app.route('/entering_vol')

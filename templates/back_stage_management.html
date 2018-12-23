@@ -4,9 +4,10 @@
 {% block my_body %}
 
 	<ul class=back_stage>
-		<li><a href="{{ url_for('add_ib') }}">添加经纪人或客户</a></li><br>
 		<li><a href="{{ url_for('entering_vol') }}">录入上周交易量</a></li><br>
 		<li><a href="{{ url_for('entering_dividend') }}">录入上月盈利分红</a></li><br>
+		<li><a href="{{ url_for('add_ib') }}">添加经纪人或客户</a></li><br>
+		<li><a href="{{ url_for('modify_commission_points_index') }}">修改佣金点数</a></li><br>
     </ul>
 
 {% endblock %}

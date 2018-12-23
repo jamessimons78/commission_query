@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+<meta charset="utf-8">
+
+{% block my_body %}
+    <h2>{{ session['investment_account'] }} 账户的推荐人佣金修改</h2>
+    {% if error %}
+        <p class=error><strong>出现错误:</strong> {{ error }}
+    {% endif %}
+
+    <form class=my_form action="{{ url_for('modify_commission_points_submit') }}" method=post>
+        <dl>
+			<table cellspacing=13>
+				<th>推荐人账号</th>
+				<th>推荐人姓名</th>
+				<th>佣金(美金/手)</th>
+				{% for point in points %}
+					<tr>
+						<td>{{ point.account }}</td>
+						<td>{{ point.name }}</td>
+						<td><input type="text" name={{ point.account }} value={{ point.point }}></td>
+					</tr>
+				{% endfor %}
+			</table>
+
+			<dt>&nbsp;
+			<dd><input type=submit value=提交佣金修改>&nbsp;&nbsp;
+			<a href="{{ url_for('back_stage_management') }}">返回</a>
+        </dl>
+    </form>
+{% endblock %}
