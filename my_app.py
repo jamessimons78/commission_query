@@ -165,6 +165,8 @@ def add_ib():
     ib_info['ib_name'] = ''
     ib_info['commission_account'] = ''
     ib_info['password'] = ''
+    ib_info['max_commission_points'] = ''
+    ib_info['max_dividend_points'] = ''
     ib_info['investment_account'] = ''
     ib_info['referrer_account'] = ''
     ib_info['referrer_name'] = ''
@@ -180,6 +182,8 @@ def add_ib_submit():
     ib_name = request.form['ib_name'].strip()
     commission_account = request.form['commission_account'].strip()
     password = request.form['password'].strip()
+    max_commission_points = request.form['max_commission_points'].strip()
+    max_dividend_points = request.form['max_dividend_points'].strip()
     investment_account = request.form['investment_account'].strip()
     referrer_account = request.form['referrer_account'].strip()
     referrer_name = request.form['referrer_name'].strip()
@@ -188,6 +192,9 @@ def add_ib_submit():
     if len(ib_name) == 0 or (len(commission_account) > 0 and len(password) == 0) \
             or (len(commission_account) == 0 and len(password) > 0) \
             or (len(commission_account) == 0 and len(investment_account) == 0) \
+            or (len(commission_account) == 0 and (len(max_commission_points) > 0 or len(max_dividend_points) > 0)) \
+            or (len(max_commission_points) == 0 and len(max_dividend_points) > 0) \
+            or (len(max_commission_points) > 0 and len(max_dividend_points) == 0) \
             or len(referrer_account) == 0:
         rule = False
         error = '关键信息不能为空！'
@@ -207,7 +214,19 @@ def add_ib_submit():
             password_reg = r'^[A-Za-z0-9]+$'
             if not re.match(password_reg, password):
                 rule = False
-                error = '您输入的密码格式不对，请输入拼音！'
+                error = '您输入的密码格式不对，请重新输入！'
+
+        if rule and len(max_commission_points) > 0:
+            points_reg = r'^(([1-9]{1})|([1]{1}[0-8]{1})|([0-9]{1}\.[0-9][1-9]?)|([1]{1}[0-7]{1}\.[0-9][1-9]?))$'
+            if not re.match(points_reg, max_commission_points):
+                rule = False
+                error = '您输入的佣金点数(美金/手)不符合要求，请核实后再录入！'
+
+        if rule and len(max_dividend_points) > 0:
+            points_reg = r'^[0]\.\d{1,2}$'
+            if not re.match(points_reg, max_dividend_points):
+                rule = False
+                error = '您输入的分红点数(0.x)不符合要求，请核实后再录入！'
 
         if rule and len(investment_account)>0:
             if not re.match(account_reg, investment_account):
@@ -234,7 +253,7 @@ def add_ib_submit():
                 rule = False
                 error = '您输入的投资账号与系统里的重复了，请核实后再录入！'
 
-        if rule and len(referrer_account) > 0:
+        if rule:
             get_db()
             cur = g.db.execute("select commission_account from user where commission_account==?", [referrer_account])
             row = cur.fetchone()
@@ -242,10 +261,22 @@ def add_ib_submit():
                 rule = False
                 error = '系统里没有您输入的推荐人账号，请核实后再录入！'
 
+        if rule and len(commission_account) > 0 and len(max_commission_points) > 0 and len(max_commission_points) > 0:
+            cur = g.db.execute('select max_commission_points, max_dividend_points from leader '
+                               'where commission_account==?', [referrer_account])
+            row = cur.fetchone()
+            if float(max_commission_points) > row[0] or float(max_dividend_points) > row[1]:
+                rule = False
+                error = '该经纪人的佣金或分红点数超过了他的推荐人，请重新设置！'
+            else:                
+                dt = datetime.now()
+                input_date = dt.strftime("%Y-%m-%d")
+                inputer = session.get('account')
+                g.db.execute('insert into leader (commission_account, ib_name, max_commission_points, max_dividend_points, referrer_account, input_date, inputer) '
+                             'values (?, ?, ?, ?, ?, ?, ?)', [commission_account, ib_name, max_commission_points, max_dividend_points, referrer_account, input_date, inputer])
+                g.db.commit()
+
     if rule:
-        dt = datetime.now()
-        input_date = dt.strftime("%Y-%m-%d")
-        inputer = session.get('account')
         g.db.execute('insert into user (ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer) '
                      'values (?, ?, ?, ?, ?, ?, ? ,?)', [ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer])
         g.db.commit()
@@ -263,6 +294,8 @@ def add_ib_submit():
         ib_info['ib_name'] = ib_name
         ib_info['commission_account'] = commission_account
         ib_info['password'] = password
+        ib_info['max_commission_points'] = max_commission_points
+        ib_info['max_dividend_points'] = max_dividend_points
         ib_info['investment_account'] = investment_account
         ib_info['referrer_account'] = referrer_account
         ib_info['referrer_name'] = referrer_name

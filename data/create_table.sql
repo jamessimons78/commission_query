@@ -41,7 +41,7 @@ CREATE TABLE IF NOT [leader](
   [commission_account] CHAR(7) NOT NULL UNIQUE, 
   [ib_name] CHAR(20) NOT NULL, 
   [max_commission_points] DECIMAL(5, 2) NOT NULL DEFAULT 8, 
-  [max_dividend_point] DECIMAL(4, 2) NOT NULL DEFAULT (0.5), 
+  [max_dividend_points] DECIMAL(4, 2) NOT NULL DEFAULT (0.5), 
   [referrer_account] CHAR(7) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(7) NOT NULL);
