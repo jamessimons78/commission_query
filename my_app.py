@@ -53,8 +53,8 @@ def login():
     '''
     登录界面
     '''
-    account = request.form['account']
-    password = request.form['password']
+    account = request.form['account'].strip()
+    password = request.form['password'].strip()
     if len(account) > 0 and len(password) > 0:
         account_reg = r'^[1-9]\d+$'
         if not re.match(account_reg, account):
@@ -177,12 +177,12 @@ def add_ib_submit():
     if not session.get('logged_in'):
         abort(401)
 
-    ib_name = request.form['ib_name']
-    commission_account = request.form['commission_account']
-    password = request.form['password']
-    investment_account = request.form['investment_account']
-    referrer_account = request.form['referrer_account']
-    referrer_name = request.form['referrer_name']
+    ib_name = request.form['ib_name'].strip()
+    commission_account = request.form['commission_account'].strip()
+    password = request.form['password'].strip()
+    investment_account = request.form['investment_account'].strip()
+    referrer_account = request.form['referrer_account'].strip()
+    referrer_name = request.form['referrer_name'].strip()
 
     rule = True
     if len(ib_name) == 0 or (len(commission_account) > 0 and len(password) == 0) \
@@ -225,6 +225,14 @@ def add_ib_submit():
             if row:
                 rule = False
                 error = '您输入的经纪人账号与系统里的重复了，请核实后再录入！'
+        
+        if rule and len(investment_account) > 0:
+            get_db()
+            cur = g.db.execute("select investment_account from user where investment_account==?", [investment_account])
+            row = cur.fetchone()
+            if row:
+                rule = False
+                error = '您输入的投资账号与系统里的重复了，请核实后再录入！'
 
         if rule and len(referrer_account) > 0:
             get_db()
@@ -238,7 +246,8 @@ def add_ib_submit():
         dt = datetime.now()
         input_date = dt.strftime("%Y-%m-%d")
         inputer = session.get('account')
-        g.db.execute('insert into user (ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer) values (?, ?, ?, ?, ?, ?, ? ,?)', [ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer])
+        g.db.execute('insert into user (ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer) '
+                     'values (?, ?, ?, ?, ?, ?, ? ,?)', [ib_name, commission_account, password, investment_account, referrer_account, referrer_name, input_date, inputer])
         g.db.commit()
 
         if len(investment_account) > 0:
@@ -279,7 +288,7 @@ def modify_commission_points():
     if not session.get('logged_in'):
         abort(401)
     
-    investment_account = request.form['investment_account']
+    investment_account = request.form['investment_account'].strip()
 
     rule = True
     if len(investment_account) > 0:
@@ -318,7 +327,7 @@ def modify_commission_points_submit():
     points_reg = r'^(([0-9]{1})|([1]{1}[0-8]{1})|([0-9]{1}\.[0-9][1-9]?)|([1]{1}[0-7]{1}\.[0-9][1-9]?))$'
     commission_points = []
     for referrer in referrer_accounts:
-        points = request.form[referrer]
+        points = request.form[referrer].strip()
         commission_points.append(points)
         if rule and len(points) > 0:
             if not re.match(points_reg, points):
@@ -336,17 +345,21 @@ def modify_commission_points_submit():
         for points in commission_points:
             if len(points) > 0:
                 s += float(points)
-        if s > 18:
+        get_db()
+        account = session.get('account')
+        cur = g.db.execute('select max_commission_points from leader where commission_account==?', [account])
+        row = cur.fetchone()
+        if s > row[0]:
             rule = False
-            error = '佣金点数设置错误，总数已超18美金/手！'
+            error = '佣金点数设置错误，总数已超' + str(row[0]) +'美金/手！'
     
     if rule:
         dt = datetime.now()
         input_date = dt.strftime("%Y-%m-%d")
         inputer = session.get('account')
 
-        get_db()
         for i in range(len(referrer_accounts)):
+            delete_yn = False
             if len(commission_points[i]) > 0:
                 if float(commission_points[i]) >0:
                     cur = g.db.execute('select commission_points from commission_points '
@@ -362,13 +375,11 @@ def modify_commission_points_submit():
                                      'values (?, ?, ?, ?, ?)', [investment_account, referrer_accounts[i], commission_points[i], input_date, inputer])
                         g.db.commit()
                 else:
-                    cur = g.db.execute('select rowid from commission_points '
-                                       'where investment_account==? and referrer_account==?', [investment_account, referrer_accounts[i]])
-                    row = cur.fetchone()
-                    if row:
-                        g.db.execute('delete from commission_points where rowid==?', [row[0]])
-                        g.db.commit()
+                    delete_yn = True
             else:
+                delete_yn = True
+            
+            if delete_yn:
                 cur = g.db.execute('select rowid from commission_points '
                                    'where investment_account==? and referrer_account==?', [investment_account, referrer_accounts[i]])
                 row = cur.fetchone()
@@ -417,7 +428,7 @@ def commission_points_setting_submit():
     points_reg = r'^(([1-9]{1})|([1]{1}[0-8]{1})|([0-9]{1}\.[0-9][1-9]?)|([1]{1}[0-7]{1}\.[0-9][1-9]?))$'
     commission_points = []
     for referrer in referrer_accounts:
-        points = request.form[referrer]
+        points = request.form[referrer].strip()
         commission_points.append(points)
         if rule and len(points) > 0:
             if not re.match(points_reg, points):
@@ -435,16 +446,19 @@ def commission_points_setting_submit():
         for points in commission_points:
             if len(points) > 0:
                 s += float(points)
-        if s > 18:
+        get_db()
+        account = session.get('account')
+        cur = g.db.execute('select max_commission_points from leader where commission_account==?', [account])
+        row = cur.fetchone()
+        if s > row[0]:
             rule = False
-            error = '佣金点数设置错误，总数已超18美金/手！'
+            error = '佣金点数设置错误，总数已超' + str(row[0]) +'美金/手！'
     
     if rule:
         dt = datetime.now()
         input_date = dt.strftime("%Y-%m-%d")
         inputer = session.get('account')
 
-        get_db()
         for i in range(len(referrer_accounts)):
             if len(commission_points[i]) > 0:
                 g.db.execute('insert into commission_points (investment_account, referrer_account, commission_points, input_date, inputer) '
@@ -469,12 +483,18 @@ def get_referrer_account(investment_account):
     row = cur.fetchone()
     referrer_account.append(row[0])
     a = row[0]
+    account = session.get('account')
     for i in range(5):
         cur = g.db.execute('select referrer_account from user where commission_account==?', [a])
         row = cur.fetchone()
-        if row[0] is not None:
-            referrer_account.append(row[0])
-            a = row[0]
+        if row is not None:
+            if len(row[0]) > 0:
+                referrer_account.append(row[0])
+                a = row[0]
+                # 每个经纪人只能查询、修改自己及以下的账户（即到我为止）
+                if a == account:
+                    break
+            else: break
         else:
             break
     return referrer_account
@@ -532,8 +552,8 @@ def entering_vol_submit():
     if not session.get('logged_in'):
         abort(401)
 
-    investment_account = request.form['investment_account']
-    trading_vol = request.form['trading_vol']
+    investment_account = request.form['investment_account'].strip()
+    trading_vol = request.form['trading_vol'].strip()
 
     rule = True
     if len(investment_account) == 0 or len(trading_vol) == 0:
@@ -640,8 +660,8 @@ def entering_dividend_submit():
     if not session.get('logged_in'):
         abort(401)
 
-    investment_account = request.form['investment_account']
-    dividend = request.form['dividend']
+    investment_account = request.form['investment_account'].strip()
+    dividend = request.form['dividend'].strip()
 
     rule = True
     if len(investment_account) == 0 or len(dividend) == 0:

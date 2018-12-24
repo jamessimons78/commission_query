@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS [dividend](
 CREATE TABLE IF NOT EXISTS [commission_points](
   [investment_account] CHAR(7) NOT NULL, 
   [referrer_account] CHAR(7) NOT NULL, 
-  [commission_points] DECIMAL(4, 1) NOT NULL, 
+  [commission_points] DECIMAL(5, 2) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(7) NOT NULL);
 
@@ -34,5 +34,14 @@ CREATE TABLE IF NOT [commission](
   [referrer_account] CHAR(7) NOT NULL, 
   [commission_points] INTEGER NOT NULL, 
   [commission] DECIMAL(8, 2) NOT NULL, 
+  [input_date] TEXT(10) NOT NULL, 
+  [inputer] CHAR(7) NOT NULL);
+  
+CREATE TABLE IF NOT [leader](
+  [commission_account] CHAR(7) NOT NULL UNIQUE, 
+  [ib_name] CHAR(20) NOT NULL, 
+  [max_commission_points] DECIMAL(5, 2) NOT NULL DEFAULT 8, 
+  [max_dividend_point] DECIMAL(4, 2) NOT NULL DEFAULT (0.5), 
+  [referrer_account] CHAR(7) NOT NULL, 
   [input_date] TEXT(10) NOT NULL, 
   [inputer] CHAR(7) NOT NULL);
