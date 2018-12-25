@@ -14,4 +14,8 @@
 		<a href="{{ url_for('show_detail_information') }}">查看详细佣金情况</a>
     </ul>
 
+	{% if session.permission_manager %}
+		<a href="{{ url_for('back_stage_management') }}">返回</a>
+	{% endif %}
+
 {% endblock %}

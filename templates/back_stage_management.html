@@ -4,10 +4,19 @@
 {% block my_body %}
 
 	<ul class=back_stage>
-		<li><a href="{{ url_for('entering_vol') }}">录入上周交易量</a></li><br>
-		<li><a href="{{ url_for('entering_dividend') }}">录入上月盈利分红</a></li><br>
-		<li><a href="{{ url_for('add_ib') }}">添加经纪人或客户</a></li><br>
-		<li><a href="{{ url_for('modify_commission_points_index') }}">修改佣金点数</a></li><br>
+		{% if session.permission_manager and session.permission_entering_vol_yn %}
+			<li><a href="{{ url_for('entering_vol') }}">录入上周交易量</a></li><br>
+			<li><a href="{{ url_for('entering_dividend') }}">录入上月盈利分红</a></li><br>
+		{% endif %}
+
+		{% if session.permission_manager and session.permission_add_ib_yn %}
+			<li><a href="{{ url_for('add_ib') }}">添加经纪人或客户</a></li><br>
+			<li><a href="{{ url_for('modify_commission_points_index') }}">修改佣金点数</a></li><br>
+		{% endif %}
+		
+		{% if session.permission_browse_commission_yn %}
+			<li><a href="{{ url_for('show_base_information') }}">查看客户基本情况</a></li><br>
+		{% endif %}
     </ul>
 
 {% endblock %}

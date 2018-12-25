@@ -61,7 +61,8 @@ def login():
             error = '您输入的经纪人账号不符合MT4账号的规则，请核实后再录入！'
         else:
             get_db()
-            cur = g.db.execute("select commission_account, manager from user where commission_account==? and password ==?", [account, password])
+            cur = g.db.execute('select commission_account, manager from user '
+                               'where commission_account==? and password ==?', [account, password])
             row = cur.fetchone()
 
             if not row:
@@ -69,12 +70,20 @@ def login():
             elif account == row[0]:
                 session['logged_in'] = True
                 session['account'] = account
+                session['permission_manager'] = row[1]
                 # 普通代理登录
                 if row[1] == 0:
                     flash('您已经成功登录——佣金查询系统！')
                     return redirect(url_for('show_base_information'))
                 # 管理员登录
                 elif row[1] == 1:
+                    cur = g.db.execute('select browse_commission_yn, add_ib_yn, entering_vol_yn from leader '
+                                       'where commission_account==?', [account])
+                    row = cur.fetchone()
+                    session['permission_browse_commission_yn'] = row[0]
+                    session['permission_add_ib_yn'] = row[1]
+                    session['permission_entering_vol_yn'] = row[2]
+
                     flash('您已经登录——后台管理系统！')
                     return redirect(url_for('back_stage_management'))
     else:
@@ -517,19 +526,21 @@ def get_referrer_account(investment_account):
     referrer_account.append(row[0])
     a = row[0]
     account = session.get('account')
-    for i in range(5):
-        cur = g.db.execute('select referrer_account from user where commission_account==?', [a])
-        row = cur.fetchone()
-        if row is not None:
-            if len(row[0]) > 0:
-                referrer_account.append(row[0])
-                a = row[0]
-                # 每个经纪人只能查询、修改自己及以下的账户（即到我为止）
-                if a == account:
-                    break
-            else: break
-        else:
-            break
+    # 每个经纪人只能查询、修改自己及以下的账户（即到我为止）
+    if a != account:
+        for i in range(5):
+            cur = g.db.execute('select referrer_account from user where commission_account==?', [a])
+            row = cur.fetchone()
+            if row is not None:
+                if len(row[0]) > 0:
+                    referrer_account.append(row[0])
+                    a = row[0]
+                    # 每个经纪人只能查询、修改自己及以下的账户（即到我为止）
+                    if a == account:
+                        break
+                else: break
+            else:
+                break
     return referrer_account
 
 
@@ -755,6 +766,10 @@ def logout():
     session.pop('logged_in', None)
     session.pop('account', None)
     session.pop('investment_account', None)
+    session.pop('permission_manager', None)
+    session.pop('permission_browse_commission_yn', None)
+    session.pop('permission_add_ib_yn', None)
+    session.pop('permission_entering_vol_yn', None)
     flash('您已经安全退出查询系统！')
     return render_template('login.html')
 
