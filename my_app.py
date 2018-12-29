@@ -62,7 +62,7 @@ def login():
             error = '您输入的经纪人账号不符合MT4账号的规则，请核实后再录入！'
         else:
             get_db()
-            cur = g.db.execute('select password, manager from user where commission_account==?', [account])
+            cur = g.db.execute('select password, manager, disable from user where commission_account==?', [account])
             row = cur.fetchone()
 
             if not row:
@@ -71,25 +71,28 @@ def login():
                 check_pwd = check_password_hash(row[0], password)
                 if not check_pwd:
                     error = '您输入的密码不正确！'
-                else:                
-                    session['logged_in'] = True
-                    session['account'] = account
-                    session['permission_manager'] = row[1]
-                    # 普通代理登录
-                    if row[1] == 0:
-                        flash('您已经成功登录——佣金查询系统！')
-                        return redirect(url_for('show_base_information'))
-                    # 管理员登录
-                    elif row[1] == 1:
-                        cur = g.db.execute('select browse_commission_yn, add_ib_yn, entering_vol_yn from leader '
-                                           'where commission_account==?', [account])
-                        row = cur.fetchone()
-                        session['permission_browse_commission_yn'] = row[0]
-                        session['permission_add_ib_yn'] = row[1]
-                        session['permission_entering_vol_yn'] = row[2]
+                else:
+                    if row[2]:
+                        error = '该账户被禁止登录！'
+                    else:
+                        session['logged_in'] = True
+                        session['account'] = account
+                        session['permission_manager'] = row[1]
+                        # 普通代理登录
+                        if row[1] == 0:
+                            flash('您已经成功登录——佣金查询系统！')
+                            return redirect(url_for('show_base_information'))
+                        # 管理员登录
+                        elif row[1] == 1:
+                            cur = g.db.execute('select browse_commission_yn, add_ib_yn, entering_vol_yn from leader '
+                                               'where commission_account==?', [account])
+                            row = cur.fetchone()
+                            session['permission_browse_commission_yn'] = row[0]
+                            session['permission_add_ib_yn'] = row[1]
+                            session['permission_entering_vol_yn'] = row[2]
 
-                        flash('您已经登录——后台管理系统！')
-                        return redirect(url_for('back_stage_management'))
+                            flash('您已经登录——后台管理系统！')
+                            return redirect(url_for('back_stage_management'))
     else:
         error = 'MT4佣金账号，或密码不能为空！'
     
