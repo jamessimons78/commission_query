@@ -125,7 +125,7 @@ def show_detail_information():
                        'WHERE (commission.referrer_account==? AND commission.input_date==(SELECT MAX(commission.input_date) FROM commission))', [account])
     rows = cur.fetchall()
     # 将查询结果用last_week列表变量传给网页
-    last_week = [[row[0], row[1], row[2], row[3], row[4]] for row in rows]
+    last_week = [[row[0], row[1], round(row[2], 2), round(row[3], 2), round(row[4], 2)] for row in rows]
     # 佣金小计和总计
     commission = [0, 0]
     for row in rows:
@@ -137,7 +137,7 @@ def show_detail_information():
                        'FROM commission LEFT JOIN user ON user.investment_account = commission.investment_account '
                        'WHERE commission.referrer_account==? GROUP BY commission.investment_account', [account])
     rows = cur.fetchall()
-    all = [[row[0], row[1], row[2], row[3], row[4]] for row in rows]
+    all = [[row[0], row[1], round(row[2], 2), round(row[3], 2), round(row[4], 2)] for row in rows]
     for row in rows:
         commission[1] += row[4]
     commission[1] = round(commission[1], 2)
