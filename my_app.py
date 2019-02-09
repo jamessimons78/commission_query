@@ -73,7 +73,7 @@ def login():
                     error = '您输入的密码不正确！'
                 else:
                     if row[2]:
-                        error = '该账户被禁止登录！'
+                        error = '该账户目前不能登录，请联系管理员！'
                     else:
                         session['logged_in'] = True
                         session['account'] = account
