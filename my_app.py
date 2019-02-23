@@ -204,6 +204,10 @@ def add_ib_submit():
     referrer_account = request.form['referrer_account'].strip()
     referrer_name = request.form['referrer_name'].strip()
 
+    dt = datetime.now()
+    input_date = dt.strftime("%Y-%m-%d")
+    inputer = session.get('account')
+
     rule = True
     if len(ib_name) == 0 or (len(commission_account) > 0 and len(password) == 0) \
             or (len(commission_account) == 0 and len(password) > 0) \
@@ -278,7 +282,7 @@ def add_ib_submit():
             if not row:
                 rule = False
                 error = '系统里没有您输入的推荐人账号，请核实后再录入！'
-
+        
         if rule and len(commission_account) > 0 and len(max_commission_points) > 0 and len(max_commission_points) > 0:
             cur = g.db.execute('select max_commission_points, max_dividend_points from leader '
                                'where commission_account==?', [referrer_account])
@@ -286,10 +290,7 @@ def add_ib_submit():
             if float(max_commission_points) > row[0] or float(max_dividend_points) > row[1]:
                 rule = False
                 error = '该经纪人的佣金或分红点数超过了他的推荐人，请重新设置！'
-            else:                
-                dt = datetime.now()
-                input_date = dt.strftime("%Y-%m-%d")
-                inputer = session.get('account')
+            else:
                 g.db.execute('insert into leader (commission_account, ib_name, max_commission_points, max_dividend_points, referrer_account, input_date, inputer) '
                              'values (?, ?, ?, ?, ?, ?, ?)', [commission_account, ib_name, max_commission_points, max_dividend_points, referrer_account, input_date, inputer])
                 g.db.commit()
